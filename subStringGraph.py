@@ -6,6 +6,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from itertools import product
 from collections import Counter
+import concatenationUC
 
 def visualize_merge_tree(tree_edges, root):
     G = nx.DiGraph()
@@ -209,32 +210,66 @@ def build_universal_multiset_cycle(k, m, return_tree=False):
     contents = generate_contents(k, m)
     #print(contents)
     canonical = { "".join(str(d) for d in sorted(t, reverse=True)) for t in contents }
-    print(canonical)
-    contentList = list(canonical)
-    contentList.sort(reverse=True)
+    #print(canonical)
+    nodes = list(canonical)
+    nodes.sort(reverse=True)
 
-    res = findCombination(contentList, 2)
-    
+    res = findCombination(nodes, 2)
+    print("Cont: ",nodes)
     edges = []
     for combo in res:
-        print(combo[0], "and", combo[1])
+        #print(combo[0], "and", combo[1])
         edge = findCommonSubSet(combo[0], combo[1], 2)
 
         if edge:
             edges.append((combo[0], combo[1]))
 
 
-    root = contentList[0]
+    root = nodes[0]
 
-    return edges, root
+    return nodes, edges, root
 
 if __name__ == '__main__':
-    k, m = 4, 5
-    tree, root = build_universal_multiset_cycle(k, m, return_tree=True)
-    # print("UC:", uc)
-    # print("Len:", len(uc))
+    k, m = 4, 3
+    nodes, edges, root = build_universal_multiset_cycle(k, m, return_tree=True)
 
-    visualize_merge_tree(tree, root)
+    UCS = []
+    #print("Main nodes:",nodes)
+    for node in nodes:
+        content = []
+        for i in range(m + 1):
+            content.append(node.count(str(i)))
+        print("Node: ",node," content: ",content)
+        cycles = concatenationUC.make_cycles(content)
+
+        currentCycle = ""
+        for cycle in cycles:
+            for element in cycle:
+                dig = int(element) - 1
+
+                currentCycle += str(dig)
+                #print(dig, end="")
+            #print()
+        #print("cc: ",currentCycle)
+        UCS.append(currentCycle)
+
+    print(UCS)
+    print(edges)
+    print(nodes)
+    contentToUC = dict(zip(nodes, UCS))
+
+    transformed = [tuple(contentToUC[x] for x in tup) for tup in edges]
+    print(transformed)
+
+    visualize_merge_tree(edges, root)
+    visualize_merge_tree(transformed, contentToUC[root])
+            
+            
+
+    
+
+    
+
 
 
 
