@@ -184,7 +184,7 @@ def findCommonSubstring(a, b, size):
     b_subs = { b2[j:j+size] for j in range(len(b)) }
     
     # if any overlap, return True
-    return not a_subs.isdisjoint(b_subs)
+    return a_subs & b_subs
 
 def findCommonSubSet(a, b, size):
     # edge cases
@@ -217,22 +217,27 @@ def build_universal_multiset_cycle(k, m, return_tree=False):
     res = findCombination(nodes, 2)
     print("Cont: ",nodes)
     edges = []
+    edgesWithShared = []
     for combo in res:
         #print(combo[0], "and", combo[1])
-        edge = findCommonSubSet(combo[0], combo[1], 2)
-
+        #edge = findCommonSubSet(combo[0], combo[1], 2)
+        edge = findCommonSubstring(combo[0], combo[1], 2)
+        #print(edge)
         if edge:
             edges.append((combo[0], combo[1]))
+            edgesWithShared.append((combo[0], combo[1], edge))
 
 
     root = nodes[0]
 
-    return nodes, edges, root
+    return nodes, edges, root, edgesWithShared
 
+def searchForUC():
+    return 0
 if __name__ == '__main__':
-    k, m = 4, 3
-    nodes, edges, root = build_universal_multiset_cycle(k, m, return_tree=True)
-
+    k, m = 4, 4
+    nodes, edges, root, edgesWithShared = build_universal_multiset_cycle(k, m, return_tree=True)
+    print("EWS:",edgesWithShared)
     UCS = []
     #print("Main nodes:",nodes)
     for node in nodes:
@@ -259,7 +264,29 @@ if __name__ == '__main__':
     contentToUC = dict(zip(nodes, UCS))
 
     transformed = [tuple(contentToUC[x] for x in tup) for tup in edges]
-    print(transformed)
+
+    edgeListWithCommon = []
+    for tup in edgesWithShared:
+        edge = []
+        for item in tup:
+            # This occurs for the contents that are encoded as strings 
+            if type(item) == str:
+                edge.append(contentToUC[item])
+
+            # This is for the common substring that the contents share
+            elif type(item) == set:
+                common = ""
+                for obj in item:
+                    for substr in obj:
+                        print("obj: ",substr)
+                        common += str(substr)
+
+                edge.append(str(common))
+
+        edgeListWithCommon.append(edge)
+
+
+    print("New list: ",edgeListWithCommon)
 
     visualize_merge_tree(edges, root)
     visualize_merge_tree(transformed, contentToUC[root])
@@ -294,3 +321,26 @@ if __name__ == '__main__':
 
 # Both share {3, 1}
 # And both share 42 as a substring
+
+#__________________________________________#
+
+# 3000, 120020102100, 1110
+
+# 0300, 002010210012
+# 0300 2010210012
+# 03002010210012
+# 01203002010210, 1011
+# 0120300201021011
+
+
+# 03002010210012
+# 0120300201021011
+# 012, 120, 203, 030, 300, 002, 020, 201, 102, 021, 210, 101, 011, 110, 101
+
+# 3002010210012
+
+# 2100123002010, 1011 
+# 0123002010210, 1011 <- will fail as we have 101 twice
+
+# 21001230020101011 
+# 210, 100, 001, 012, 123, 230, 300, 002, 020, 201, 010, 101, 010, 101, 011, 112, 121
