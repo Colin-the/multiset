@@ -300,77 +300,84 @@ def searchForUC(remaining: dict, adj: dict, current: str, goalLen: int, commonSu
     currentNode = unrotate(current, remaining)
     ptr = remaining[currentNode]
     #print("Current: ", current, " sequ: ",currentSequence, " ptr: ",ptr, " current node: ",currentNode)
-    # While we are still on some valid substring
-    while ptr:
-        # Extract the current symbol that we are looking at
-        for symbol in ptr:
-            #print("Sym: ",symbol)
-            currentSequence.append(symbol)
-            #print("Sequence: ",currentSequence," len ",len(currentSequence))
-            
-            # Remove the first char as this is the symbol we are currently looking at
-            remaining[currentNode] = remaining[currentNode][1:]
+    print("Sequence: ","".join(currentSequence)," length: ",len(currentSequence))
 
-            #print("New rem ",remaining)
-            # If we reach the desired length then we have found our cycle
-            if len(currentSequence) == goalLen:
-                return currentSequence
-            
-            # If we have seen more then k - 2 symbols then we could possibly 
-            # make a jump to some other node via an edge
-            if len(currentSequence) >= commonSubstringSize:
-                # extract the last k-2 symbols from the current string
-                possibleJoin = currentSequence[commonSubstringSize * -1:]
-                possibleJoin = "".join(possibleJoin)
-                #print("Join on: ",possibleJoin)
+    # If this node has no symbols left, we can't proceed
+    if not remaining[currentNode]:
+        print("Out of symbols in the current node")
+        return None
 
-                # Look at all of our edges coming out of the current node 
-                #print(current," list ",adj)
-                edges = adj[currentNode]         
-                for edge in edges:
-                    # Find out the k-2 symbols that these two nodes share
-                    joiningSubstring = edge[1]
+    # Extract the current symbol that we are looking at
+    for symbol in ptr:
+        #print("Sym: ",symbol)
+        currentSequence.append(symbol)
+        #print("Sequence: ",currentSequence," len ",len(currentSequence))
+        
+        # Remove the first char as this is the symbol we are currently looking at
+        remaining[currentNode] = remaining[currentNode][1:]
 
-                    # Compare the last k-2 symbols from the current string with the
-                    # edge to determine if we CAN go from one node to the next
-                    if joiningSubstring == possibleJoin:
+        #print("New rem ",remaining)
+        # If we reach the desired length then we have found our cycle
+        if len(currentSequence) == goalLen:
+            return currentSequence
+        
+        # If we have seen more then k - 2 symbols then we could possibly 
+        # make a jump to some other node via an edge
+        if len(currentSequence) >= commonSubstringSize:
+            # extract the last k-2 symbols from the current string
+            possibleJoin = currentSequence[commonSubstringSize * -1:]
+            possibleJoin = "".join(possibleJoin)
+            #print("Join on: ",possibleJoin)
 
-                        #print("Can join on: ",possibleJoin, "using ", joiningSubstring," via edge ",edge)
-                        # At this point we need to branch and consider the possibility where we 
-                        # jump from the current node to this new node and the possibility that we do not
+            # Look at all of our edges coming out of the current node 
+            #print(current," list ",adj)
+            edges = adj[currentNode]         
+            for edge in edges:
+                # Find out the k-2 symbols that these two nodes share
+                joiningSubstring = edge[1]
 
-                        # First we need to check if the node we are trying to jump to still contains the 
-                        # substring that would allow us to make the jump
+                # Compare the last k-2 symbols from the current string with the
+                # edge to determine if we CAN go from one node to the next
+                if joiningSubstring == possibleJoin:
 
-                        # Extract the oringal node from the edge
-                        destinationNode = edge[0]
-                        
-                        # Update it with what we have currently used in the cycle
-                        destinationString = remaining[destinationNode] 
+                    #print("Can join on: ",possibleJoin, "using ", joiningSubstring," via edge ",edge)
+                    # At this point we need to branch and consider the possibility where we 
+                    # jump from the current node to this new node and the possibility that we do not
 
-                        #print("Dest: ",destinationNode)
-                        # Find out what the node we are jumping to looks like under rotation
-                        possibleRotations = rotate(destinationString, joiningSubstring)
-                        #print("Will join to: ",possibleRotations)
+                    # First we need to check if the node we are trying to jump to still contains the 
+                    # substring that would allow us to make the jump
 
-                        if possibleRotations == []:
+                    # Extract the oringal node from the edge
+                    destinationNode = edge[0]
+                    
+                    # Update it with what we have currently used in the cycle
+                    destinationString = remaining[destinationNode] 
+
+                    #print("Dest: ",destinationNode)
+                    # Find out what the node we are jumping to looks like under rotation
+                    possibleRotations = rotate(destinationString, joiningSubstring)
+                    #print("Will join to: ",possibleRotations)
+
+                    if possibleRotations == []:
+                        continue
+
+                    for rotatedString in possibleRotations:
+                        # Make a new dictorary so we don't mess up the old one
+                        remainingSubCase = remaining.copy()
+                        subSequence = currentSequence.copy()
+                        remainingSubCase[destinationNode] = rotatedString[2:]
+
+                        # And then calling the function recursively and then examining what it returns
+                        seq = searchForUC(remainingSubCase, adj, destinationNode, goalLen, commonSubstringSize, subSequence, allSequence)
+                        #print("Seq: ",seq)
+                        if seq == None:
                             continue
-
-                        for rotatedString in possibleRotations:
-                            # Make a new dictorary so we don't mess up the old one
-                            remainingSubCase = remaining.copy()
-                            remainingSubCase[destinationNode] = rotatedString[2:]
-
-                            # And then calling the function recursively and then examining what it returns
-                            seq = searchForUC(remainingSubCase, adj, destinationNode, goalLen, commonSubstringSize, currentSequence, allSequence)
+                        else:
 
                             #print("Found seq by searching: ",seq, " seq has len ",len(seq))
                             return seq
-        current = 0
+    return None
 
-
-
-    return 0
 
 def verifyMultisetUC(cycle: str, k: int, m: int) -> bool:
     """
@@ -497,14 +504,17 @@ if __name__ == '__main__':
     # Pick some node to be the root. It doesn't matter what node
     # we use as the final sequence will be the same under rotation 
     root = UCS[0]
-    current = root
-    cycle = searchForUC(remaining, adj, current, UClength, k-2, currentSequence, allSequence)
-    cycle = "".join(cycle)
+    for node in UCS:
 
-    print("Found cycle: ",cycle)
-    print("This cycle has length ",len(cycle))
+        current = node
+        cycle = searchForUC(remaining, adj, current, UClength, k-2, currentSequence, allSequence)
+        if cycle != None:
+            cycle = "".join(cycle)
 
-    verifyMultisetUC(cycle, k, m)
+            print("Found cycle: ",cycle)
+            print("This cycle has length ",len(cycle))
+
+            verifyMultisetUC(cycle, k, m)
 
     visualize_merge_tree(edges, root)
     visualize_merge_tree(transformed, contentToUC[root])
