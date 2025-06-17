@@ -371,7 +371,59 @@ def searchForUC(remaining: dict, adj: dict, current: str, goalLen: int, commonSu
 
 
     return 0
+
+def verifyMultisetUC(cycle: str, k: int, m: int) -> bool:
+    """
+    Verify that `cycle` is a valid universal cycle of all size-k 
+    multisets with max-multiplicity m.
+    
+    Returns True if it’s valid, False otherwise.
+    """
+    N = len(cycle)
+    # 1) Check length
+    expected_length = comb(m + k - 1, m) 
+    if N != expected_length:
+        print(f"Wrong length: got {N}, expected {expected_length}")
+        return False
+
+    # 2) Generate the set of all target multisets as sorted tuples
+    #    e.g. all ways to pick k items from {0,..,n-1} with rep ≤ m
+    targets = set()
+    def gen_multisets(prefix, start, left):
+        if left == 0:
+            targets.add(tuple(prefix))
+            return
+        for x in range(start, m):
+            if prefix.count(x) < m:
+                gen_multisets(prefix + [x], x, left - 1)
+    gen_multisets([], 0, k)
+    #print(targets)
+
+    # 3) Slide a window of length k around the cycle (wrap‑around)
+    seen = set()
+    for i in range(N):
+        window = [cycle[(i + j) % N] for j in range(k)]
+        # convert window to a multiset: sort
+        ms = tuple(window)
+        if ms in seen:
+            print("Duplicate window:", ms)
+            print(window)
+            return False
+        seen.add(ms)
+
+    # 4) Compare seen vs. targets
+    if seen != targets:
+        missing = targets - seen
+        extras  = seen    - targets
+        print("Missing multisets:", missing)
+        print("Unexpected windows:", extras)
+        return False
+
+    return True
+
 if __name__ == '__main__':
+    # k is number of symbols in the multi-set
+    # m is what the content has to sum up to
     k, m = 4, 4
     nodes, edges, root, edgesWithShared = build_universal_multiset_cycle(k, m, return_tree=True)
     #print("EWS:",edgesWithShared)
@@ -447,9 +499,12 @@ if __name__ == '__main__':
     root = UCS[0]
     current = root
     cycle = searchForUC(remaining, adj, current, UClength, k-2, currentSequence, allSequence)
+    cycle = "".join(cycle)
 
-    print("Found cycle: ","".join(cycle))
+    print("Found cycle: ",cycle)
     print("This cycle has length ",len(cycle))
+
+    verifyMultisetUC(cycle, k, m)
 
     visualize_merge_tree(edges, root)
     visualize_merge_tree(transformed, contentToUC[root])
