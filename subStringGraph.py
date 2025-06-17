@@ -232,7 +232,7 @@ def build_universal_multiset_cycle(k, m, return_tree=False):
 
     return nodes, edges, root, edgesWithShared
 
-def searchForUC(nodes, edges):
+def searchForUC(nodes, edges, current, goalLen, commonSubstringSize, currentSequence, allSequence):
     """
     Function that is designed to look threw all of the diffrent
     fixed content UC's to try and find some way to join them
@@ -240,14 +240,53 @@ def searchForUC(nodes, edges):
     and searching for all possible ways to join the fixed 
     content's togther.
     """
-    # Pick some node to be the root. It doesn't matter what node
-    # we use as the final sequence will be the same under rotation 
-    root = nodes[0]
-    visited = []
 
-    for edge in edges:
-        if edge:
-            return 1
+    # While we are still on some valid substring
+    while current:
+        # Extract the current symbol that we are looking at
+        for symbol in current:
+            #print("Sym: ",symbol)
+            currentSequence += symbol
+
+            # If we reach the desired length then we have found our cycle
+            if len(currentSequence) == goalLen:
+                return currentSequence
+            
+            # If we have seen more then k - 2 symbols then we could possibly 
+            # make a jump to some other node via an edge
+            if len(currentSequence) >= commonSubstringSize:
+                # extract the last k-2 symbols from the current string
+                possibleJoin = currentSequence[commonSubstringSize * -1:]
+
+                # Look at all of our edges           
+                for edge in edges:
+                    # If the current node is involved in the edge we are looking at
+                    if current == edge[0] or current == edge[1]:
+                        # Find out the k-2 symbols that these two nodes share
+                        joiningSubstring = edge[2]
+
+                        # Compare the last k-2 symbols from the current string with the
+                        # edge to determine if we CAN go from one node to the next
+                        if joiningSubstring == possibleJoin:
+
+                            print("Can join on: ",possibleJoin, "using ", joiningSubstring," via edge ",edge)
+                            # At this point we need to branch and Consider the possibility where we 
+                            # jump from the current node to this new node and the possibility that we do not
+
+                            # We can do this by updating the current node
+                            if current == edge[0]:
+                                current = edge[1]
+                            else:
+                                current = edge[0]
+
+                            # And then calling the function recursively and then examining what it returns
+                            seq = searchForUC(nodes, edges, current, goalLen, commonSubstringSize, currentSequence, allSequence)
+
+                            print("Found seq by searching: ",seq)
+                            return seq
+        current = 0
+
+
 
     return 0
 if __name__ == '__main__':
@@ -303,6 +342,19 @@ if __name__ == '__main__':
 
 
     print("New list: ",edgeListWithCommon)
+    print("NOdes: ",nodes)
+
+    UClength = comb(k + m - 1, m)
+    print("UC should be ",UClength," long")
+
+    currentSequence = ""
+    allSequence = []
+
+    # Pick some node to be the root. It doesn't matter what node
+    # we use as the final sequence will be the same under rotation 
+    root = UCS[0]
+    current = root
+    searchForUC(UCS, edgeListWithCommon, current, UClength, k-2, currentSequence, allSequence)
 
     visualize_merge_tree(edges, root)
     visualize_merge_tree(transformed, contentToUC[root])
