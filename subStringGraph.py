@@ -215,7 +215,7 @@ def build_universal_multiset_cycle(k, m, return_tree=False):
     nodes.sort(reverse=True)
 
     res = findCombination(nodes, 2)
-    print("Cont: ",nodes)
+    #print("Cont: ",nodes)
     edges = []
     edgesWithShared = []
     for combo in res:
@@ -243,12 +243,17 @@ def circularFind(text: str, sub: str, start: int):
         return index
     
 def rotate(string: str, substring: str):
-    #print("For ",string," ",substring)
+    #print("\tFor ",string," ",substring)
     """
     Will return a list of all possible strings that
     start with the given substring
     """
     strings = []
+
+    # Base case when we can't possibly have any matches
+    if len(string) < len(substring):
+        return strings
+    
     start = 0
     while True:
         start = circularFind(string, substring, start)
@@ -291,15 +296,18 @@ def searchForUC(remaining: dict, adj: dict, current: str, goalLen: int, commonSu
     content's togther.
     """
 
+    # Extract the remaining symbols form the current node 
+    currentNode = unrotate(current, remaining)
+    ptr = remaining[currentNode]
+    #print("Current: ", current, " sequ: ",currentSequence, " ptr: ",ptr, " current node: ",currentNode)
     # While we are still on some valid substring
-    while current:
+    while ptr:
         # Extract the current symbol that we are looking at
-        for symbol in current:
+        for symbol in ptr:
             #print("Sym: ",symbol)
             currentSequence.append(symbol)
-            print("Sequence: ",currentSequence," len ",len(currentSequence))
-
-            currentNode = unrotate(current, remaining)
+            #print("Sequence: ",currentSequence," len ",len(currentSequence))
+            
             # Remove the first char as this is the symbol we are currently looking at
             remaining[currentNode] = remaining[currentNode][1:]
 
@@ -314,7 +322,7 @@ def searchForUC(remaining: dict, adj: dict, current: str, goalLen: int, commonSu
                 # extract the last k-2 symbols from the current string
                 possibleJoin = currentSequence[commonSubstringSize * -1:]
                 possibleJoin = "".join(possibleJoin)
-                print("Join on: ",possibleJoin)
+                #print("Join on: ",possibleJoin)
 
                 # Look at all of our edges coming out of the current node 
                 #print(current," list ",adj)
@@ -327,19 +335,36 @@ def searchForUC(remaining: dict, adj: dict, current: str, goalLen: int, commonSu
                     # edge to determine if we CAN go from one node to the next
                     if joiningSubstring == possibleJoin:
 
-                        print("Can join on: ",possibleJoin, "using ", joiningSubstring," via edge ",edge)
+                        #print("Can join on: ",possibleJoin, "using ", joiningSubstring," via edge ",edge)
                         # At this point we need to branch and consider the possibility where we 
                         # jump from the current node to this new node and the possibility that we do not
 
+                        # First we need to check if the node we are trying to jump to still contains the 
+                        # substring that would allow us to make the jump
+
+                        # Extract the oringal node from the edge
+                        destinationNode = edge[0]
+                        
+                        # Update it with what we have currently used in the cycle
+                        destinationString = remaining[destinationNode] 
+
+                        #print("Dest: ",destinationNode)
                         # Find out what the node we are jumping to looks like under rotation
-                        possibleRotations = rotate(current, joiningSubstring)
-                        print("Will join to: ",possibleRotations)
+                        possibleRotations = rotate(destinationString, joiningSubstring)
+                        #print("Will join to: ",possibleRotations)
+
+                        if possibleRotations == []:
+                            continue
 
                         for rotatedString in possibleRotations:
-                            # And then calling the function recursively and then examining what it returns
-                            seq = searchForUC(remaining, adj, rotatedString, goalLen, commonSubstringSize, currentSequence, allSequence)
+                            # Make a new dictorary so we don't mess up the old one
+                            remainingSubCase = remaining.copy()
+                            remainingSubCase[destinationNode] = rotatedString[2:]
 
-                            print("Found seq by searching: ",seq)
+                            # And then calling the function recursively and then examining what it returns
+                            seq = searchForUC(remainingSubCase, adj, destinationNode, goalLen, commonSubstringSize, currentSequence, allSequence)
+
+                            #print("Found seq by searching: ",seq, " seq has len ",len(seq))
                             return seq
         current = 0
 
@@ -349,14 +374,14 @@ def searchForUC(remaining: dict, adj: dict, current: str, goalLen: int, commonSu
 if __name__ == '__main__':
     k, m = 4, 4
     nodes, edges, root, edgesWithShared = build_universal_multiset_cycle(k, m, return_tree=True)
-    print("EWS:",edgesWithShared)
+    #print("EWS:",edgesWithShared)
     UCS = []
     #print("Main nodes:",nodes)
     for node in nodes:
         content = []
         for i in range(m + 1):
             content.append(node.count(str(i)))
-        print("Node: ",node," content: ",content)
+        #print("Node: ",node," content: ",content)
         cycles = concatenationUC.make_cycles(content)
 
         currentCycle = ""
@@ -402,7 +427,7 @@ if __name__ == '__main__':
     #print("NOdes: ",nodes)
 
     UClength = comb(k + m - 1, m)
-    #print("UC should be ",UClength," long")
+    print("UC should be ",UClength," long")
 
     currentSequence = []
     allSequence = []
@@ -413,15 +438,18 @@ if __name__ == '__main__':
         adj[u].append((v, overlap))
         adj[v].append((u, overlap))
 
-    print("Formed adj: ",adj)
+    #print("Formed adj: ",adj)
     remaining = {n:n for n in UCS}
-    print(remaining)
+    #print(remaining)
 
     # Pick some node to be the root. It doesn't matter what node
     # we use as the final sequence will be the same under rotation 
     root = UCS[0]
     current = root
-    searchForUC(remaining, adj, current, UClength, k-2, currentSequence, allSequence)
+    cycle = searchForUC(remaining, adj, current, UClength, k-2, currentSequence, allSequence)
+
+    print("Found cycle: ","".join(cycle))
+    print("This cycle has length ",len(cycle))
 
     visualize_merge_tree(edges, root)
     visualize_merge_tree(transformed, contentToUC[root])
