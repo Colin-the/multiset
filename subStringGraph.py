@@ -232,7 +232,57 @@ def build_universal_multiset_cycle(k, m, return_tree=False):
 
     return nodes, edges, root, edgesWithShared
 
-def searchForUC(nodes, edges, current, goalLen, commonSubstringSize, currentSequence, allSequence):
+#def findAllOccurrences(string, substring):
+    
+def circularFind(text: str, sub: str, start: int):
+    extended_text = text + text
+    index = extended_text.find(sub, start)
+    if index >= len(text):
+        return index - len(text)
+    else:
+        return index
+    
+def rotate(string: str, substring: str):
+    #print("For ",string," ",substring)
+    """
+    Will return a list of all possible strings that
+    start with the given substring
+    """
+    strings = []
+    start = 0
+    while True:
+        start = circularFind(string, substring, start)
+        #print("Start: ",start)
+        if start == -1:
+            break
+        rotatedString = string[start:] + string[:start]
+        #print("string: ",rotatedString)
+
+        # If we have come accross the string before then we are done
+        if rotatedString in strings:
+            break
+
+        # If this is our first time Encountering the string add it to the list
+        else:
+            strings.append(rotatedString)
+            start += 1
+    return strings
+
+def unrotate(rotated, candidates):
+    """
+    Given a rotated string and a dict of original-string keys,
+    return the original key that can be rotated to form `rotated`.
+    If no match is found, returns None.
+    """
+    for original in candidates:
+        if len(original) != len(rotated):
+            continue
+        # A rotated version of original must be a substring of original+original
+        if rotated in (original + original):
+            return original
+    return None
+
+def searchForUC(remaining: dict, adj: dict, current: str, goalLen: int, commonSubstringSize: int, currentSequence: list, allSequence: list):
     """
     Function that is designed to look threw all of the diffrent
     fixed content UC's to try and find some way to join them
@@ -246,8 +296,14 @@ def searchForUC(nodes, edges, current, goalLen, commonSubstringSize, currentSequ
         # Extract the current symbol that we are looking at
         for symbol in current:
             #print("Sym: ",symbol)
-            currentSequence += symbol
+            currentSequence.append(symbol)
+            print("Sequence: ",currentSequence," len ",len(currentSequence))
 
+            currentNode = unrotate(current, remaining)
+            # Remove the first char as this is the symbol we are currently looking at
+            remaining[currentNode] = remaining[currentNode][1:]
+
+            #print("New rem ",remaining)
             # If we reach the desired length then we have found our cycle
             if len(currentSequence) == goalLen:
                 return currentSequence
@@ -257,30 +313,31 @@ def searchForUC(nodes, edges, current, goalLen, commonSubstringSize, currentSequ
             if len(currentSequence) >= commonSubstringSize:
                 # extract the last k-2 symbols from the current string
                 possibleJoin = currentSequence[commonSubstringSize * -1:]
+                possibleJoin = "".join(possibleJoin)
+                print("Join on: ",possibleJoin)
 
-                # Look at all of our edges           
+                # Look at all of our edges coming out of the current node 
+                #print(current," list ",adj)
+                edges = adj[currentNode]         
                 for edge in edges:
-                    # If the current node is involved in the edge we are looking at
-                    if current == edge[0] or current == edge[1]:
-                        # Find out the k-2 symbols that these two nodes share
-                        joiningSubstring = edge[2]
+                    # Find out the k-2 symbols that these two nodes share
+                    joiningSubstring = edge[1]
 
-                        # Compare the last k-2 symbols from the current string with the
-                        # edge to determine if we CAN go from one node to the next
-                        if joiningSubstring == possibleJoin:
+                    # Compare the last k-2 symbols from the current string with the
+                    # edge to determine if we CAN go from one node to the next
+                    if joiningSubstring == possibleJoin:
 
-                            print("Can join on: ",possibleJoin, "using ", joiningSubstring," via edge ",edge)
-                            # At this point we need to branch and Consider the possibility where we 
-                            # jump from the current node to this new node and the possibility that we do not
+                        print("Can join on: ",possibleJoin, "using ", joiningSubstring," via edge ",edge)
+                        # At this point we need to branch and consider the possibility where we 
+                        # jump from the current node to this new node and the possibility that we do not
 
-                            # We can do this by updating the current node
-                            if current == edge[0]:
-                                current = edge[1]
-                            else:
-                                current = edge[0]
+                        # Find out what the node we are jumping to looks like under rotation
+                        possibleRotations = rotate(current, joiningSubstring)
+                        print("Will join to: ",possibleRotations)
 
+                        for rotatedString in possibleRotations:
                             # And then calling the function recursively and then examining what it returns
-                            seq = searchForUC(nodes, edges, current, goalLen, commonSubstringSize, currentSequence, allSequence)
+                            seq = searchForUC(remaining, adj, rotatedString, goalLen, commonSubstringSize, currentSequence, allSequence)
 
                             print("Found seq by searching: ",seq)
                             return seq
@@ -313,9 +370,9 @@ if __name__ == '__main__':
         #print("cc: ",currentCycle)
         UCS.append(currentCycle)
 
-    print(UCS)
-    print(edges)
-    print(nodes)
+    #print(UCS)
+    #print(edges)
+    #print(nodes)
     contentToUC = dict(zip(nodes, UCS))
 
     transformed = [tuple(contentToUC[x] for x in tup) for tup in edges]
@@ -333,7 +390,7 @@ if __name__ == '__main__':
                 common = ""
                 for obj in item:
                     for substr in obj:
-                        print("obj: ",substr)
+                        #print("obj: ",substr)
                         common += str(substr)
 
                 edge.append(str(common))
@@ -341,20 +398,30 @@ if __name__ == '__main__':
         edgeListWithCommon.append(edge)
 
 
-    print("New list: ",edgeListWithCommon)
-    print("NOdes: ",nodes)
+    #print("New list: ",edgeListWithCommon)
+    #print("NOdes: ",nodes)
 
     UClength = comb(k + m - 1, m)
-    print("UC should be ",UClength," long")
+    #print("UC should be ",UClength," long")
 
-    currentSequence = ""
+    currentSequence = []
     allSequence = []
+
+    # Build adjacency list
+    adj = {n: [] for n in UCS}
+    for u, v, overlap in edgeListWithCommon:
+        adj[u].append((v, overlap))
+        adj[v].append((u, overlap))
+
+    print("Formed adj: ",adj)
+    remaining = {n:n for n in UCS}
+    print(remaining)
 
     # Pick some node to be the root. It doesn't matter what node
     # we use as the final sequence will be the same under rotation 
     root = UCS[0]
     current = root
-    searchForUC(UCS, edgeListWithCommon, current, UClength, k-2, currentSequence, allSequence)
+    searchForUC(remaining, adj, current, UClength, k-2, currentSequence, allSequence)
 
     visualize_merge_tree(edges, root)
     visualize_merge_tree(transformed, contentToUC[root])
@@ -416,3 +483,80 @@ if __name__ == '__main__':
 
 # 123121321
 # 123, 231, 312, 121
+
+from typing import List, Tuple, Set, Optional
+
+
+def search_for_uc(
+    nodes: List[str],
+    edges: List[Tuple[str, str, str]],
+    goal_len: int,
+) -> Optional[str]:
+    """
+    Find a universal cycle of length `goal_len` by DFS over the graph.
+
+    - `nodes`: list of node-strings.
+    - `edges`: list of tuples (u, v, overlap).
+    Returns the cycle-string if found, else None.
+    """
+    # Build adjacency list
+    adj = {n: [] for n in nodes}
+    for u, v, overlap in edges:
+        adj[u].append((v, overlap))
+        adj[v].append((u, overlap))
+
+    
+
+    def rotate_to_prefix(s: str, sub: str) -> str:
+        idx = s.find(sub)
+        if idx == -1:
+            raise ValueError(f"substring {sub} not in {s}")
+        return s[idx:] + s[:idx]
+
+    def dfs(current: str, seq: str, visited: Set[Tuple[str, str, str]]) -> Optional[str]:
+        if len(seq) == goal_len:
+            return seq
+        # Try each edge out of current
+        for nxt, overlap in adj[current]:
+            # Build a consistent edge key
+            edge_key = (min(current, nxt), max(current, nxt), overlap)
+            if edge_key in visited:
+                continue
+            # Can we transition? seq must end with overlap
+            if not seq.endswith(overlap):
+                continue
+            # Rotate next so that overlap is prefix
+            rotated = rotate_to_prefix(nxt, overlap)
+            tail = rotated[len(overlap):]
+            if not tail:
+                continue
+            visited.add(edge_key)
+            res = dfs(nxt, seq + tail, visited)
+            if res:
+                return res
+            visited.remove(edge_key)
+        return None
+
+    # Try each node as a starting point
+    print("adj:", adj)
+    for start in nodes:
+        print("Start: ",start)
+        result = dfs(start, start, set())
+        print("Res: ",result)
+        if result:
+            return result
+    return None
+
+# Example usage
+# if __name__ == '__main__':
+#     nodes = ['4000', '130030103100', '202200', '112012102110', '1']
+#     edges = [
+#         ('4000', '130030103100', '00'),
+#         ('4000', '202200', '00'),
+#         ('130030103100', '202200', '00'),
+#         ('130030103100', '112012102110', '10'),
+#         ('202200', '112012102110', '02'),
+#         ('112012102110', '1', '11'),
+#     ]
+#     uc = search_for_uc(nodes, edges, goal_len=20)
+#     print('Found UC:', uc)
