@@ -232,7 +232,23 @@ def build_universal_multiset_cycle(k, m, return_tree=False):
 
     return nodes, edges, root, edgesWithShared
 
-def searchForUC():
+def searchForUC(nodes, edges):
+    """
+    Function that is designed to look threw all of the diffrent
+    fixed content UC's to try and find some way to join them
+    togther. It does this by treating it like a graph problem
+    and searching for all possible ways to join the fixed 
+    content's togther.
+    """
+    # Pick some node to be the root. It doesn't matter what node
+    # we use as the final sequence will be the same under rotation 
+    root = nodes[0]
+    visited = []
+
+    for edge in edges:
+        if edge:
+            return 1
+
     return 0
 if __name__ == '__main__':
     k, m = 4, 4
@@ -344,3 +360,7 @@ if __name__ == '__main__':
 
 # 21001230020101011 
 # 210, 100, 001, 012, 123, 230, 300, 002, 020, 201, 010, 101, 010, 101, 011, 112, 121
+
+
+# 123121321
+# 123, 231, 312, 121
