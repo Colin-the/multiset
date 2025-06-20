@@ -8,7 +8,7 @@ from itertools import product
 from collections import Counter
 import concatenationUC
 
-def visualize_merge_tree(tree_edges, root):
+def visualize_merge_tree(tree_edges, root, filename="graph"):
     G = nx.DiGraph()
     for parent, child in tree_edges:
         G.add_edge(parent, child)
@@ -43,7 +43,7 @@ def visualize_merge_tree(tree_edges, root):
             arrows=False)
     plt.title("Top-Down Merge Tree of Content Vectors")
     plt.tight_layout()
-    plt.savefig("chart")
+    plt.savefig(filename)
     plt.show()
     
 # Helper fuction to generate all possible contents for a given k and m
@@ -516,8 +516,8 @@ if __name__ == '__main__':
 
             verifyMultisetUC(cycle, k, m)
 
-    visualize_merge_tree(edges, root)
-    visualize_merge_tree(transformed, contentToUC[root])
+    visualize_merge_tree(edges, root, filename="content")
+    visualize_merge_tree(transformed, contentToUC[root], filename="cycles")
             
             
 
