@@ -108,18 +108,19 @@ def get_representative(seq: List[int]) -> Tuple[int, ...]:
     max_rot = max(rotations)
     return tuple(max_rot)
 
-def traverse_graph(start: Tuple[int, ...], m: int) -> Set[Tuple[int, ...]]:
-    """Traverses the entire graph using unit shifts between adjacent positions."""
+def traverse_graph(start: Tuple[int, ...]) -> List[Tuple[int, ...]]:
+    """Traverses the entire graph using unit shifts between adjacent positions.
+    Returns nodes in BFS order."""
+    visited_order = []
     visited = set()
     queue = deque([start])
-    k = len(start)
+    visited.add(start)
     
     while queue:
         node = queue.popleft()
-        if node in visited:
-            continue
-        visited.add(node)
+        visited_order.append(node)  # Record node when processed
         node_list = list(node)
+        k = len(node_list)
         
         for i in range(k):
             if node_list[i] > 0:
@@ -136,27 +137,50 @@ def traverse_graph(start: Tuple[int, ...], m: int) -> Set[Tuple[int, ...]]:
                 rep2 = get_representative(new_list2)
                 
                 if rep1 not in visited:
+                    visited.add(rep1)
                     queue.append(rep1)
                 if rep2 not in visited:
+                    visited.add(rep2)
                     queue.append(rep2)
-    return visited
+                    
+    return visited_order
+
+def compare_tuple_list(visited: List[Tuple[int, ...]], strings: List[List[int]]):
+    """
+    Compares visited (list of tuples) against strings (list of lists).
+    Prints any elements in visited that are not found in strings (ignoring order).
+    """
+    set_visited = set(visited)
+    set_strings = set(tuple(s) for s in strings)
+
+    missing = set_visited - set_strings
+
+    if not missing:
+        print("All visited elements are present in the strings list.")
+    else:
+        print("The following visited elements are NOT found in the strings list:")
+        for item in sorted(missing):
+            print(item)
+
 
 k = 5
-m = 6
+m = 5
 strings = generate_strings(k, m)
 print("Total number of string: ",len(strings))
-for s in strings:
-    print(s)
+# for s in strings:
+#     print(s)
 graph = generate_rotation_tree(strings, k)
 
 # Print graph edges:
-for node, neighbors in graph.items():
-    print(f"{node} -> {sorted(neighbors)}")
-
+# for node, neighbors in graph.items():
+#     print(f"{node} -> {sorted(neighbors)}")
+#print(graph)
 visualize_grouped_tree(graph)
 
 # Example usage:
-start_node = (6, 0, 0, 0, 0)
-all_nodes = traverse_graph(start_node, m=5)
+start_node = (5, 0, 0, 0, 0)
+all_nodes = traverse_graph(start_node)
 print("Visited: ",all_nodes)
+print("Strings: ",strings)
+compare_tuple_list(all_nodes, strings)
 print(f"Total nodes reached: {len(all_nodes)}")
