@@ -1,16 +1,3 @@
-#!/usr/bin/env python3
-"""
-multiset_uc.py
-
-Generate a universal cycle for k-multisets summing to m, under the
-“shift one unit between adjacent positions + lexicographic-max rotation” rule.
-
-Usage:
-    python multiset_uc.py [k] [m]
-
-Defaults:
-    k = 5, m = 5
-"""
 import networkx as nx
 import matplotlib.pyplot as plt
 from collections import defaultdict, deque
@@ -61,13 +48,7 @@ def build_content_tree(k: int, m: int) -> Dict[Tuple[int, ...], List[Tuple[int, 
 
     return tree
 
-def postorder_traversal(tree: Dict[Tuple[int, ...], List[Tuple[int, ...]]],
-                        root: Tuple[int, ...]) -> List[Tuple[int, ...]]:
-    """
-    Perform a depth-first post-order traversal of the tree.
-    Returns the list of nodes in the order visited, reversed so that
-    root appears first, leaves last.
-    """
+def traversal(tree: Dict[Tuple[int, ...], List[Tuple[int, ...]]], root: Tuple[int, ...]) -> List[Tuple[int, ...]]:
     sequence: List[Tuple[int, ...]] = []
     def dfs(u: Tuple[int, ...]):
         for v in tree.get(u, []):
@@ -75,6 +56,7 @@ def postorder_traversal(tree: Dict[Tuple[int, ...], List[Tuple[int, ...]]],
         sequence.append(u)
 
     dfs(root)
+    print()
     return sequence[::-1]  # reverse so we get root → ... → leaves
 
 def plot_tree(tree: Dict[Tuple[int, ...], List[Tuple[int, ...]]], root: Tuple[int, ...], filename="tree.png"):
@@ -130,24 +112,22 @@ def main():
         k = int(sys.argv[1])
         m = int(sys.argv[2])
     else:
-        k, m = 5, 5
+        k, m = 4, 4
 
-    print(f"Building tree for k={k}, m={m}...", file=sys.stderr)
+    print(f"Building tree for k={k}, m={m}", file=sys.stderr)
     tree = build_content_tree(k, m)
 
     start = (m,) + (0,) * (k - 1)
     root = get_representative(list(start))
 
-    print("Traversing tree in post-order to get universal cycle...", file=sys.stderr)
-    cycle = postorder_traversal(tree, root)
+    #print("Traversing tree in post-order to get universal cycle...", file=sys.stderr)
+    cycle = traversal(tree, root)
 
-    print("\n# Universal cycle sequence of representatives:")
-    for tup in cycle:
-        print(tup)
+    # print("\n# Universal cycle sequence of representatives:")
+    # for tup in cycle:
+    #     print(tup)
 
-    # Optionally, produce a single cyclic string if you want:
-    # Here we just flatten the tuples with a separator
-    print("\n# Flattened cycle (strings):")
+    print("Flattened cycle (strings):")
     flat = " → ".join("".join(str(x) for x in t) for t in cycle)
     print(flat)
     plot_tree(tree, root)
