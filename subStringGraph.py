@@ -365,7 +365,7 @@ def searchForUC(remaining: dict, adj: dict, current: str, goalLen: int, commonSu
                         # Make a new dictorary so we don't mess up the old one
                         remainingSubCase = remaining.copy()
                         subSequence = currentSequence.copy()
-                        remainingSubCase[destinationNode] = rotatedString[2:]
+                        remainingSubCase[destinationNode] = rotatedString[commonSubstringSize:]
 
                         # And then calling the function recursively and then examining what it returns
                         seq = searchForUC(remainingSubCase, adj, destinationNode, goalLen, commonSubstringSize, subSequence, allSequence)
@@ -431,7 +431,7 @@ def verifyMultisetUC(cycle: str, k: int, m: int) -> bool:
 if __name__ == '__main__':
     # k is number of symbols in the multi-set
     # m is what the content has to sum up to
-    k, m = 4, 4
+    k, m = 6,5 
     nodes, edges, root, edgesWithShared = build_universal_multiset_cycle(k, m, return_tree=True)
     #print("EWS:",edgesWithShared)
     UCS = []
@@ -576,80 +576,3 @@ if __name__ == '__main__':
 
 # 123121321
 # 123, 231, 312, 121
-
-from typing import List, Tuple, Set, Optional
-
-
-def search_for_uc(
-    nodes: List[str],
-    edges: List[Tuple[str, str, str]],
-    goal_len: int,
-) -> Optional[str]:
-    """
-    Find a universal cycle of length `goal_len` by DFS over the graph.
-
-    - `nodes`: list of node-strings.
-    - `edges`: list of tuples (u, v, overlap).
-    Returns the cycle-string if found, else None.
-    """
-    # Build adjacency list
-    adj = {n: [] for n in nodes}
-    for u, v, overlap in edges:
-        adj[u].append((v, overlap))
-        adj[v].append((u, overlap))
-
-    
-
-    def rotate_to_prefix(s: str, sub: str) -> str:
-        idx = s.find(sub)
-        if idx == -1:
-            raise ValueError(f"substring {sub} not in {s}")
-        return s[idx:] + s[:idx]
-
-    def dfs(current: str, seq: str, visited: Set[Tuple[str, str, str]]) -> Optional[str]:
-        if len(seq) == goal_len:
-            return seq
-        # Try each edge out of current
-        for nxt, overlap in adj[current]:
-            # Build a consistent edge key
-            edge_key = (min(current, nxt), max(current, nxt), overlap)
-            if edge_key in visited:
-                continue
-            # Can we transition? seq must end with overlap
-            if not seq.endswith(overlap):
-                continue
-            # Rotate next so that overlap is prefix
-            rotated = rotate_to_prefix(nxt, overlap)
-            tail = rotated[len(overlap):]
-            if not tail:
-                continue
-            visited.add(edge_key)
-            res = dfs(nxt, seq + tail, visited)
-            if res:
-                return res
-            visited.remove(edge_key)
-        return None
-
-    # Try each node as a starting point
-    print("adj:", adj)
-    for start in nodes:
-        print("Start: ",start)
-        result = dfs(start, start, set())
-        print("Res: ",result)
-        if result:
-            return result
-    return None
-
-# Example usage
-# if __name__ == '__main__':
-#     nodes = ['4000', '130030103100', '202200', '112012102110', '1']
-#     edges = [
-#         ('4000', '130030103100', '00'),
-#         ('4000', '202200', '00'),
-#         ('130030103100', '202200', '00'),
-#         ('130030103100', '112012102110', '10'),
-#         ('202200', '112012102110', '02'),
-#         ('112012102110', '1', '11'),
-#     ]
-#     uc = search_for_uc(nodes, edges, goal_len=20)
-#     print('Found UC:', uc)
