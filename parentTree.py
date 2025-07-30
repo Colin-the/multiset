@@ -48,14 +48,7 @@ def compute_subtree_sizes(tree: Dict[Tuple[int, ...], List[Tuple[int, ...]]],
     dfs(root)
     return sizes
 
-def plot_tree(tree: Dict[Tuple[int, ...], List[Tuple[int, ...]]],
-              root: Tuple[int, ...],
-              filename="tree.png"):
-    """
-    Draws the tree in a true hierarchical layout (no Graphviz needed):
-    - Root at y=0, children at y=-1, -2, …
-    - Horizontal spacing proportional to subtree sizes.
-    """
+def plot_tree(tree: Dict[Tuple[int, ...], List[Tuple[int, ...]]], root: Tuple[int, ...], filename="tree.png", shorthand = False):
     # Build directed graph
     G = nx.DiGraph()
     for parent, children in tree.items():
@@ -100,12 +93,20 @@ def plot_tree(tree: Dict[Tuple[int, ...], List[Tuple[int, ...]]],
         arrowsize=12,
         edge_color='gray'
     )
-    nx.draw_networkx_labels(
-        G, pos,
-        labels={n: str(n) for n in G.nodes()},
-        font_size=8
-    )
-    plt.title("Hierarchical Tree of Rotation Representatives")
+    if shorthand:
+        nx.draw_networkx_labels(
+            G, pos,
+            labels={n: str(n)[:len(str(n))-4] +")" for n in G.nodes()},
+            font_size=8
+        )
+    else:
+        nx.draw_networkx_labels(
+            G, pos,
+            labels={n: str(n) for n in G.nodes()},
+            font_size=8
+        )
+
+    plt.title("Tree")
     plt.axis('off')
     plt.tight_layout()
     plt.savefig(filename, dpi=150)
@@ -115,5 +116,4 @@ def plot_tree(tree: Dict[Tuple[int, ...], List[Tuple[int, ...]]],
 if __name__ == "__main__":
     k, m = 5, 5
     tree, root = build_parent_tree(k, m)
-    print(type(tree))
-    plot_tree(tree, root)
+    plot_tree(tree, root,shorthand=False)
