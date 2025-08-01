@@ -48,6 +48,32 @@ def compute_subtree_sizes(tree: Dict[Tuple[int, ...], List[Tuple[int, ...]]],
     dfs(root)
     return sizes
 
+
+def get_representative(arr):
+    k = len(arr)
+    best = tuple(arr)
+    for r in range(1, k):
+        rot = tuple(arr[r:] + arr[:r])
+        if rot > best:
+            best = rot
+    return best
+
+def successor(rep):
+    """
+    Given a k-tuple rep summing to m, produce the next rep
+    in the universal cycle by moving one unit right and re-rotating.
+    """
+    k = len(rep)
+    arr = list(rep)
+    # find rightmost positive
+    j = max(i for i,v in enumerate(arr) if v > 0)
+    # move one unit right
+    arr[j]   -= 1
+    arr[(j+1)%k] += 1
+    # re-normalize
+    return get_representative(arr)
+
+
 def plot_tree(tree: Dict[Tuple[int, ...], List[Tuple[int, ...]]], root: Tuple[int, ...], filename="tree.png", shorthand = False):
     # Build directed graph
     G = nx.DiGraph()
@@ -106,7 +132,7 @@ def plot_tree(tree: Dict[Tuple[int, ...], List[Tuple[int, ...]]], root: Tuple[in
             font_size=8
         )
 
-    plt.title("Tree")
+    plt.title("\"shorthand\" tree")
     plt.axis('off')
     plt.tight_layout()
     plt.savefig(filename, dpi=150)
@@ -116,4 +142,14 @@ def plot_tree(tree: Dict[Tuple[int, ...], List[Tuple[int, ...]]], root: Tuple[in
 if __name__ == "__main__":
     k, m = 5, 5
     tree, root = build_parent_tree(k, m)
-    plot_tree(tree, root,shorthand=False)
+    plot_tree(tree, root,shorthand=True)
+
+
+
+
+# rotate first symbol + following 0s to end and test if it is representiative
+
+# the sucessor rule is what encodes how to traverse the tree and what end up yeilding the cycle
+
+
+# this uses the missing symbol register
