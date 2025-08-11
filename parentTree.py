@@ -132,17 +132,119 @@ def plot_tree(tree: Dict[Tuple[int, ...], List[Tuple[int, ...]]], root: Tuple[in
             font_size=8
         )
 
-    plt.title("\"shorthand\" tree")
+    plt.title("Tree")
     plt.axis('off')
     plt.tight_layout()
     plt.savefig(filename, dpi=150)
     plt.show()
 
-# Example usage:
-if __name__ == "__main__":
-    k, m = 5, 5
+# add to parentTree.py (or run alongside it)
+
+def find_successor_cycles(reps, successor):
+    succ = {r: successor(r) for r in reps}
+    visited = set()
+    cycles = []
+    for r in reps:
+        if r in visited:
+            continue
+        path = []
+        cur = r
+        index = {}
+        while cur not in index and cur not in visited:
+            index[cur] = len(path)
+            path.append(cur)
+            cur = succ[cur]
+        if cur in index:
+            # found a cycle
+            start = index[cur]
+            cycle = path[start:]
+            cycles.append(cycle)
+        # mark whole path visited (cycles + trees feeding them)
+        for v in path:
+            visited.add(v)
+    return cycles, succ
+
+def build_cycle_index(cycles):
+    # map rep -> (cycle_id, index_in_cycle)
+    cidx = {}
+    for cid, cyc in enumerate(cycles):
+        for i, v in enumerate(cyc):
+            cidx[v] = (cid, i)
+    return cidx
+
+def splice_cycles(cycles, cid_a, cid_b, idx_parent, idx_child):
+    A = cycles[cid_a]
+    B = cycles[cid_b]
+    newA = A[:idx_parent+1] + B[idx_child:] + B[:idx_child] + A[idx_parent+1:]
+    # remove the two cycles and append newA
+    # we'll keep new cycle at index cid_a and delete cid_b (caller must handle)
+    cycles[cid_a] = newA
+    cycles[cid_b] = None
+
+def build_universal_cycle_by_splicing(k, m):
+    # build reps and tree using your functions
     tree, root = build_parent_tree(k, m)
-    plot_tree(tree, root,shorthand=True)
+    # reps set
+    reps = set(tree.keys())
+    for chs in tree.values():
+        reps.update(chs)
+
+    # find successor cycles
+    cycles, succ = find_successor_cycles(reps, successor)
+    cycles = [c for c in cycles]  # list of lists
+    cidx = build_cycle_index(cycles)
+
+    # process parent->child edges and splice when they connect distinct cycles
+    changed = True
+    while True:
+        # rebuild index map each outer iteration (because cycles change)
+        cycles = [c for c in cycles if c is not None]
+        cidx = build_cycle_index(cycles)
+        if len(cycles) <= 1:
+            break
+
+        merged = False
+        # iterate parent tree edges looking for cross-cycle edges
+        for parent, children in tree.items():
+            for child in children:
+                if parent not in cidx or child not in cidx:
+                    continue
+                cid_p, idx_p = cidx[parent]
+                cid_c, idx_c = cidx[child]
+                if cid_p != cid_c:
+                    # splice child-cycle into parent-cycle
+                    splice_cycles(cycles, cid_p, cid_c, idx_p, idx_c)
+                    # mark the old place of cid_c as None
+                    cycles[cid_c] = None
+                    merged = True
+                    break
+            if merged:
+                break
+        if not merged:
+            # no more cross-cycle parent->child edges found
+            break
+
+    # final cleanup
+    cycles = [c for c in cycles if c is not None]
+    if len(cycles) == 1:
+        return cycles[0]
+    else:
+        # failed to merge into a single cycle
+        return cycles  # return remaining cycles so you can inspect
+
+if __name__ == "__main__":
+    k, m = 4, 3
+    tree, root = build_parent_tree(k, m)
+    
+
+    big_cycle = build_universal_cycle_by_splicing(k, m)
+    if isinstance(big_cycle[0], tuple):
+        print("Final cycle length (reps):", len(big_cycle))
+        print(big_cycle[:20])
+    else:
+        print("Remaining cycles:", len(big_cycle))
+
+    plot_tree(tree, root,shorthand=False)
 
 
 
@@ -153,3 +255,5 @@ if __name__ == "__main__":
 
 
 # this uses the missing symbol register
+
+# 0000001000011000101000111001001011001101001111010101110110111111
