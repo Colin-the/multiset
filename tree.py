@@ -112,7 +112,7 @@ def main():
         k = int(sys.argv[1])
         m = int(sys.argv[2])
     else:
-        k, m = 4, 4
+        k, m = 4, 4  
 
     print(f"Building tree for k={k}, m={m}", file=sys.stderr)
     tree = build_content_tree(k, m)

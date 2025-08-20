@@ -16,16 +16,16 @@ def parent_of(rep):
     """
     k = len(rep)
     arr = list(rep)
-    i = max(idx for idx, v in enumerate(arr) if v > 0)
+    i = min(idx for idx, v in enumerate(arr) if v > 0)
     arr[i] -= 1
-    left = (i - 1) % k
+    left = k - 1
     arr[left] += 1
     return get_representative(arr)
 
 def build_parent_tree(k, m):
     all_tuples = itertools.product(range(m+1), repeat=k)
     reps = { get_representative(list(t)) for t in all_tuples if sum(t)==m }
-    root = get_representative([m] + [0]*(k-1))
+    root = (1,1,1,1,1) #get_representative([m] + [0]*(k-1))
     tree = defaultdict(list)
     for rep in reps:
         if rep == root:
@@ -132,7 +132,7 @@ def plot_tree(tree: Dict[Tuple[int, ...], List[Tuple[int, ...]]], root: Tuple[in
             font_size=8
         )
 
-    plt.title("\"shorthand\" tree")
+    plt.title("Tree")
     plt.axis('off')
     plt.tight_layout()
     plt.savefig(filename, dpi=150)
@@ -140,9 +140,9 @@ def plot_tree(tree: Dict[Tuple[int, ...], List[Tuple[int, ...]]], root: Tuple[in
 
 # Example usage:
 if __name__ == "__main__":
-    k, m = 5, 5
+    k, m = 5,5
     tree, root = build_parent_tree(k, m)
-    plot_tree(tree, root,shorthand=True)
+    plot_tree(tree, root,shorthand=False)
 
 
 
