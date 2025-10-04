@@ -69,7 +69,6 @@ if __name__ == "__main__":
     counts = [int(input(f"N_{i+1}: ")) for i in range(K)]
     cycles = make_cycles(counts)
 
-    # now you have them in a list — print or otherwise process:
     print(f"Generated {len(cycles)} necklaces:")
     print(cycles)
     for cyc in cycles:
