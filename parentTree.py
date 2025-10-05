@@ -10,7 +10,7 @@ def get_representative(seq):
     k = len(seq)
     return max(tuple(seq[i:]+seq[:i]) for i in range(k))
 
-def parent_of(rep):
+def parent_joe(rep):
     """
     Apply the parent-rule to rep, then re-normalize to lex-greatest rotation.
     """
@@ -22,10 +22,23 @@ def parent_of(rep):
     arr[left] += 1
     return get_representative(arr)
 
+def parent_of(rep):
+    """
+    Apply the parent-rule to rep, then re-normalize to lex-greatest rotation.
+    """
+    k = len(rep)
+    arr = list(rep)
+    i = max(idx for idx, v in enumerate(arr) if v > 0)
+    arr[i] -= 1
+    left = (i - 1) % k
+    arr[left] += 1
+    return get_representative(arr)
+
 def build_parent_tree(k, m):
     all_tuples = itertools.product(range(m+1), repeat=k)
     reps = { get_representative(list(t)) for t in all_tuples if sum(t)==m }
-    root = (1,1,1,1,1) #get_representative([m] + [0]*(k-1))
+    # root = (1,1,1,1,1) #
+    root = get_representative([m] + [0]*(k-1))
     tree = defaultdict(list)
     for rep in reps:
         if rep == root:
@@ -234,16 +247,16 @@ def build_universal_cycle_by_splicing(k, m):
         return cycles  # return remaining cycles so you can inspect
 
 if __name__ == "__main__":
-    k, m = 4, 3
+    k, m = 4,4
     tree, root = build_parent_tree(k, m)
     
 
-    big_cycle = build_universal_cycle_by_splicing(k, m)
-    if isinstance(big_cycle[0], tuple):
-        print("Final cycle length (reps):", len(big_cycle))
-        print(big_cycle[:20])
-    else:
-        print("Remaining cycles:", len(big_cycle))
+    # big_cycle = build_universal_cycle_by_splicing(k, m)
+    # if isinstance(big_cycle[0], tuple):
+    #     print("Final cycle length (reps):", len(big_cycle))
+    #     print(big_cycle[:20])
+    # else:
+    #     print("Remaining cycles:", len(big_cycle))
 
     plot_tree(tree, root,shorthand=False)
 
