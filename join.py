@@ -12,10 +12,14 @@ def get_representative(seq):
     k = len(seq)
     return max(tuple(seq[i:]+seq[:i]) for i in range(k))
 
-def parent_of(rep):
+def parent_of(rep, m, k):
     """
     Apply the parent-rule to rep, then re-normalize to lex-greatest rotation.
     """
+    # As the root has no parent
+    if rep == buildRoot(m, k):
+        return None
+    
     k = len(rep)
     arr = list(rep)
     i = max(idx for idx, v in enumerate(arr) if v > 0)
@@ -44,13 +48,18 @@ def nextRotation(seq):
     newStr.append(seq[0])
     return tuple(newStr)
 
-def jump(str:List[int]):
+def jump(str:List[int], m, k):
     """Apply the jump rule to str."""
     k = len(str)
     x = msr(str[:k-1], m)
+
+    # Now Based on what the missing symbol is we can potentially jump from the 
+    # current node to a parent or child of the current node
     # If the sum in our current string is m then we cannot jump
     if x == 0:
-        return "No jump"
+        print("x = 0 no jump for ", str)
+        return None
+    
     # Now we have to look at what we would be jumping to
     else:
         # Drop the first symbol from the current window
@@ -62,9 +71,35 @@ def jump(str:List[int]):
 
         # Now we can only make a jump to this node IF it is a child/parent of the current node
         n1, n2 = get_representative(str), get_representative(newnode)
-        if parent_of(n1) == n2 or parent_of(n2) == n1:
-            return get_representative(newnode)
-        return "Not related in tree"
+        p1,p2 = parent_of(n1, m, k), parent_of(n2, m, k)
+
+        print("n1: ",n1," n2: ",n2)
+        print("p1: ",p1," p2: ",p2)
+
+        if ((p1 is None)):
+            if (list(p2) == list(n1)):
+                return x-1
+            else:
+                print("n1 is root and no jmp")
+                return None
+        elif ((p2 is None)):
+            if (list(p1) == list(n2)):
+                return x-1
+            else:
+                print("n2 is root and no jmp")
+                return None
+
+            
+        
+        
+
+        # print(list(parent_of(n2)), " and ",list(n1))
+
+        if (list(p1) == list(n2)) or (list(p2) == list(n1)):
+            return x-1
+        
+        print("Not related in tree", str, " and ",newnode)
+        return None
 
 
 def findDecPos(str):
@@ -78,21 +113,55 @@ def findDecPos(str):
 
 if __name__ == "__main__":
     k, m = 4, 4
+    currentLen = 0
     UClen = lengthOfUC(m, k)
     root = buildRoot(m, k)
 
     # Declare our cycle and load our root into the first part of it
     uc = [0]*UClen
-    j = 0
     for i in root:
-        uc[j] = i
-        j+=1
-    
-    x = (2,1,1,0)
-    x = nextRotation(x)
-    x = nextRotation(x)
-    print("Root:", root)
-    print("Node:", x)
-    print("Length of UC:", UClen)
-    print(jump(x))
-    print("UC:",uc)
+        # As we want to leave one symbol out initialy
+        if currentLen < k - 1:
+            uc[currentLen] = i
+            currentLen+=1
+
+    currentNode = root
+    while currentLen < UClen - 20:
+        print("LP start: ", currentNode)
+        # Check and see if we need to jump to another cycle or if we can contine on this one
+        next = jump(currentNode, m, k)
+
+        # If we are going to be staying on our current cycle
+        if next is None:
+            # append the missing symbol in the current cycle to the UC
+            print("Appilying MSR to ",uc[currentLen-k+1:currentLen])
+            uc[currentLen] = msr(uc[currentLen-k+1:currentLen],m)
+            currentLen+=1 
+
+            # Now we will still be on the same node but just rotated one pos
+            currentNode = nextRotation(currentNode)   
+
+        # If we are going to be jumping to some other node
+        else:
+            # Insert our next symbol into the cycle
+            uc[currentLen] = next
+            currentLen+=1
+
+            # The node we are jumping to is the last k-1 symbols of the current cycle
+            # and we can appliy the msr on this to find the full node
+            newNode = uc[currentLen-k+1:currentLen]
+            newNode.append(msr(newNode, m))
+            currentNode = tuple(newNode)
+
+        print("Current UC:",uc[:currentLen],"\n")
+
+
+    # x = (0,0,3,1) 
+    # # x = (2,1,1,0)
+    # # x = nextRotation(x)
+    # # x = nextRotation(x)
+    # print("Root:", root)
+    # print("Node:", x)
+    # print("Length of UC:", UClen)
+    # print(jump(x, m, k))
+    # print("UC:",uc)
