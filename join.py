@@ -55,13 +55,11 @@ def jump(str:List[int], m, k):
 
     # Now Based on what the missing symbol is we can potentially jump from the 
     # current node to a parent or child of the current node
-    # If the sum in our current string is m then we cannot jump
-    if x == 0:
-        print("x = 0 no jump for ", str)
-        return None
-    
-    # Now we have to look at what we would be jumping to
-    else:
+
+    # First consider any children that we may jump to
+    if (x > 0):
+        print("try to jmp child")
+        # Now we have to look at what we would be jumping to
         # Drop the first symbol from the current window
         newnode = list(str[1:k-1])
         # Add a decremented version of the new missing symbol to the end of the window
@@ -76,40 +74,84 @@ def jump(str:List[int], m, k):
         print("n1: ",n1," n2: ",n2)
         print("p1: ",p1," p2: ",p2)
 
+        checkPC = True
+
         if ((p1 is None)):
             if (list(p2) == list(n1)):
                 return x-1
             else:
                 print("n1 is root and no jmp")
-                return None
+                checkPC = False
+                 
         elif ((p2 is None)):
             if (list(p1) == list(n2)):
                 return x-1
             else:
-                print("n2 is root and no jmp")
-                return None
+                print("p2 is root and no jmp")
+                checkPC = False
 
-            
-        
-        
 
         # print(list(parent_of(n2)), " and ",list(n1))
 
-        if (list(p1) == list(n2)) or (list(p2) == list(n1)):
+        if (checkPC and ((list(p1) == list(n2)) or (list(p2) == list(n1)))):
             return x-1
         
-        print("Not related in tree", str, " and ",newnode)
-        return None
+        
+    # Now consider jumping to a parent of the current node
+    if (x < k):  
+        print("try to jmp parent")      
+        # Now we have to look at what we would be jumping to
+        # Drop the first symbol from the current window
+        newnode = list(str[1:k-1])
+        # Add a decremented version of the new missing symbol to the end of the window
+        newnode.append(x+1)
+        missing = msr(newnode, m)
+        newnode.append(missing)
+        print("Newnode", newnode)
 
+        # If the value needed to bring our window back in range is negative then we can't
+        # jump to a parent on this node
+        if (missing < 0):
+            print("Can't do this")
+        else:
 
-def findDecPos(str):
-    """Find the rightmost position of the rightmost decrease in a sequence."""
-    k = len(str)
-    for i in range(k-1, -1, -1):
-        if str[i] > str[(i+1)%k]:
-            return i
-    return -1
+            
 
+        
+
+            # Now we can only make a jump to this node IF it is a child/parent of the current node
+            n1, n2 = get_representative(str), get_representative(newnode)
+            p1,p2 = parent_of(n1, m, k), parent_of(n2, m, k)
+
+            print("n1: ",n1," n2: ",n2)
+            print("p1: ",p1," p2: ",p2)
+
+            checkPC = True
+
+            if ((p1 is None)):
+                if (list(p2) == list(n1)):
+                    return x+1
+                else:
+                    print("n1 is root and no jmp")
+                    checkPC = False
+                    
+            elif ((p2 is None)):
+                if (list(p1) == list(n2)):
+                    return x+1
+                else:
+                    print("n2 is root and no jmp")
+                    checkPC = False
+
+            if (checkPC and ((list(p1) == list(n2)) or (list(p2) == list(n1)))):
+                return x+1
+            
+            
+        
+
+    # If none of the criteria to jump to a parent or child was met then we will simply 
+    # continue on the same cycle, which is indcated by this function returning None 
+    return None
+    
 
 if __name__ == "__main__":
     k, m = 4, 4
@@ -126,7 +168,7 @@ if __name__ == "__main__":
             currentLen+=1
 
     currentNode = root
-    while currentLen < UClen - 20:
+    while currentLen < UClen:
         print("LP start: ", currentNode)
         # Check and see if we need to jump to another cycle or if we can contine on this one
         next = jump(currentNode, m, k)
@@ -155,7 +197,8 @@ if __name__ == "__main__":
 
         print("Current UC:",uc[:currentLen],"\n")
 
-
+    for i in uc:
+        print(i,end="")
     # x = (0,0,3,1) 
     # # x = (2,1,1,0)
     # # x = nextRotation(x)
@@ -165,3 +208,6 @@ if __name__ == "__main__":
     # print("Length of UC:", UClen)
     # print(jump(x, m, k))
     # print("UC:",uc)
+
+
+    # 400030013010310 0210201112 0210201112
