@@ -167,46 +167,61 @@ if __name__ == "__main__":
             uc[currentLen] = i
             currentLen+=1
 
-    currentNode = root
-    while currentLen < UClen:
-        print("LP start: ", currentNode)
-        # Check and see if we need to jump to another cycle or if we can contine on this one
-        next = jump(currentNode, m, k)
+    # currentNode = root
+    # while currentLen < UClen:
+    #     print("LP start: ", currentNode)
+    #     # Check and see if we need to jump to another cycle or if we can contine on this one
+    #     next = jump(currentNode, m, k)
 
-        # If we are going to be staying on our current cycle
-        if next is None:
-            # append the missing symbol in the current cycle to the UC
-            print("Appilying MSR to ",uc[currentLen-k+1:currentLen])
-            uc[currentLen] = msr(uc[currentLen-k+1:currentLen],m)
-            currentLen+=1 
+    #     # If we are going to be staying on our current cycle
+    #     if next is None:
+    #         # append the missing symbol in the current cycle to the UC
+    #         print("Appilying MSR to ",uc[currentLen-k+1:currentLen])
+    #         uc[currentLen] = msr(uc[currentLen-k+1:currentLen],m)
+    #         currentLen+=1 
 
-            # Now we will still be on the same node but just rotated one pos
-            currentNode = nextRotation(currentNode)   
+    #         # Now we will still be on the same node but just rotated one pos
+    #         currentNode = nextRotation(currentNode)   
 
-        # If we are going to be jumping to some other node
-        else:
-            # Insert our next symbol into the cycle
-            uc[currentLen] = next
-            currentLen+=1
+    #     # If we are going to be jumping to some other node
+    #     else:
+    #         # Insert our next symbol into the cycle
+    #         uc[currentLen] = next
+    #         currentLen+=1
 
-            # The node we are jumping to is the last k-1 symbols of the current cycle
-            # and we can appliy the msr on this to find the full node
-            newNode = uc[currentLen-k+1:currentLen]
-            newNode.append(msr(newNode, m))
-            currentNode = tuple(newNode)
+    #         # The node we are jumping to is the last k-1 symbols of the current cycle
+    #         # and we can appliy the msr on this to find the full node
+    #         newNode = uc[currentLen-k+1:currentLen]
+    #         newNode.append(msr(newNode, m))
+    #         currentNode = tuple(newNode)
 
-        print("Current UC:",uc[:currentLen],"\n")
+    #     print("Current UC:",uc[:currentLen],"\n")
 
-    for i in uc:
-        print(i,end="")
+    # for i in uc:
+    #     print(i,end="")
+
+
     # x = (0,0,3,1) 
-    # # x = (2,1,1,0)
-    # # x = nextRotation(x)
-    # # x = nextRotation(x)
-    # print("Root:", root)
-    # print("Node:", x)
-    # print("Length of UC:", UClen)
-    # print(jump(x, m, k))
+    x = (2,2,0,0)
+    print("Node:", x)
+    print(jump(x, m, k))
+
+    x = nextRotation(x)
+    print("Node:", x)
+    print(jump(x, m, k))
+
+    x = nextRotation(x)
+    print("Node:", x)
+    print(jump(x, m, k))
+
+    x = nextRotation(x)
+    print("Node:", x)
+    print(jump(x, m, k))
+
+    print("Root:", root)
+    print("Node:", x)
+    print("Length of UC:", UClen)
+    print(jump(x, m, k))
     # print("UC:",uc)
 
 
